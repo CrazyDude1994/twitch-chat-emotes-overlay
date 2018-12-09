@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">TwitchTVEmotes</string>
+    <string-array name="chat_alignment">
+        <item>Top left</item>
+        <item>Top center</item>
+        <item>Top right</item>
+        <item>Center left</item>
+        <item>Center right</item>
+        <item>Bottom left</item>
+        <item>Bottom center</item>
+        <item>Bottom right</item>
+    </string-array>
 </resources>

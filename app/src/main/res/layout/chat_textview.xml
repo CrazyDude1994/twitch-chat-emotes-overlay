@@ -2,7 +2,10 @@
 <TextView xmlns:android="http://schemas.android.com/apk/res/android"
           android:layout_width="wrap_content"
           android:textSize="14sp"
+          android:shadowColor="#FF000000"
           android:textColor="@android:color/white"
+          android:textStyle="bold"
+          android:shadowRadius="2"
           android:layout_height="wrap_content">
 
 </TextView>

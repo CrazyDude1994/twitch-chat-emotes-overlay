@@ -5,7 +5,6 @@ import io.reactivex.Flowable
 import retrofit2.Retrofit
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.regex.Pattern
 
 
 class EmoteApi(val channel: String) {
@@ -15,8 +14,8 @@ class EmoteApi(val channel: String) {
 
     init {
         val retrofit = Retrofit.Builder()
-            .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(RxJava2CallAdapterFactory.createAsync())
+                .addConverterFactory(GsonConverterFactory.create())
+                .addCallAdapterFactory(RxJava2CallAdapterFactory.createAsync())
 
         bttvService = retrofit.baseUrl("https://api.betterttv.net").build().create(BTTVService::class.java)
         ffzService = retrofit.baseUrl("https://api.frankerfacez.com").build().create(FFZService::class.java)
@@ -24,41 +23,41 @@ class EmoteApi(val channel: String) {
 
     fun getGlobalEmotes(): Flowable<List<EmoteModel>> {
 
-        val bttvFlowable = bttvService.getGlobalEmotes().map {
+        val bttvFlowable = bttvService.getGlobalEmotes().retry(5).map {
             it.data.map {
                 EmoteModel(
-                    it.code,
-                    "https://cdn.betterttv.net/emote/${it.id}/3x"
+                        it.code,
+                        "https://cdn.betterttv.net/emote/${it.id}/3x"
                 )
             }
         }
 
-        val bttvChannelFlowable = bttvService.getChannelEmotes(channel).map {
+        val bttvChannelFlowable = bttvService.getChannelEmotes(channel).retry(5).map {
             it.data.map {
                 EmoteModel(
-                    it.code,
-                    "https://cdn.betterttv.net/emote/${it.id}/3x"
+                        it.code,
+                        "https://cdn.betterttv.net/emote/${it.id}/3x"
                 )
             }
         }
 
-        val ffzChannelFlowable = ffzService.getChannelEmotes(channel)
-            .map {
-                it.data.values.map { it.emotes.map { EmoteModel(it.name, "https:${it.urls.values.last()}") } }.flatten()
-            }
+        val ffzChannelFlowable = ffzService.getChannelEmotes(channel).retry(5)
+                .map {
+                    it.data.values.map { it.emotes.map { EmoteModel(it.name, "https:${it.urls.values.last()}") } }.flatten()
+                }
 
-        val ffzGlobalFlowable = ffzService.getGlobalEmotes()
-            .map {
-                it.data.values.map { it.emotes.map { EmoteModel(it.name, "https:${it.urls.values.last()}") } }.flatten()
-            }
+        val ffzGlobalFlowable = ffzService.getGlobalEmotes().retry(5)
+                .map {
+                    it.data.values.map { it.emotes.map { EmoteModel(it.name, "https:${it.urls.values.last()}") } }.flatten()
+                }
 
         return Flowable.merge(
-            listOf(
-                bttvFlowable,
-                bttvChannelFlowable,
-                ffzChannelFlowable,
-                ffzGlobalFlowable
-            )
+                listOf(
+                        bttvFlowable,
+                        bttvChannelFlowable,
+                        ffzChannelFlowable,
+                        ffzGlobalFlowable
+                )
         )
     }
 }

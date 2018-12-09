@@ -1,10 +1,12 @@
 package com.exception.catcher.twitchtvemotes.ui
 
 import android.content.Context
+import android.graphics.Color
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.support.v7.widget.RecyclerView
 import android.text.SpannableString
+import android.text.style.ForegroundColorSpan
 import android.text.style.ImageSpan
 import android.util.Log
 import android.view.LayoutInflater
@@ -16,7 +18,6 @@ import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.exception.catcher.twitchtvemotes.R
 import com.exception.catcher.twitchtvemotes.models.EmoteModel
-import java.util.logging.Logger
 
 class ChatAdapter : RecyclerView.Adapter<ViewHolder>() {
 
@@ -34,7 +35,16 @@ class ChatAdapter : RecyclerView.Adapter<ViewHolder>() {
 
     override fun onBindViewHolder(viewHolder: ViewHolder, p1: Int) {
         val data = data[viewHolder.adapterPosition]
-        (viewHolder.itemView as TextView).text = "${data.name}: ${data.message}"
+        val spannableString = SpannableString("${data.name}: ${data.message}")
+        if (spannableString.indexOf(":") >= 0) {
+            spannableString.setSpan(
+                ForegroundColorSpan(Color.parseColor(data.color)),
+                0,
+                spannableString.indexOf(":"),
+                0
+            )
+        }
+        (viewHolder.itemView as TextView).text = spannableString
         val offset = "${data.name}: ".length
         data.list.forEach {
             loadEmote(
@@ -46,15 +56,16 @@ class ChatAdapter : RecyclerView.Adapter<ViewHolder>() {
         }
         emotes.let {
             it.forEach {
-                var index = viewHolder.itemView.text.indexOf(it.name)
-                while (index >= 0) {
-                    loadEmote(it.url, index, index + it.name.length, viewHolder)
-                    index = viewHolder.itemView.text.indexOf(it.name, index + 1)
+                val matcher = it.pattern.matcher(viewHolder.itemView.text)
+                while (matcher.find()) {
+                    val start = matcher.toMatchResult().start()
+                    val end = matcher.toMatchResult().end()
+                    loadEmote(it.url, start, end, viewHolder)
                 }
             }
         }
-
     }
+
 
     fun loadEmote(url: String, start: Int, end: Int, viewHolder: ViewHolder) {
         Glide.with(viewHolder.itemView.context)
@@ -77,17 +88,14 @@ class ChatAdapter : RecyclerView.Adapter<ViewHolder>() {
                     resource.callback = object : Drawable.Callback {
                         override fun unscheduleDrawable(p0: Drawable, p1: Runnable) {
                             viewHolder.itemView.removeCallbacks(p1)
-//                            Log.d("ChatAdapter", "Unschedule drawable")
                         }
 
                         override fun invalidateDrawable(p0: Drawable) {
                             viewHolder.itemView.invalidate()
-//                            Log.d("ChatAdapter", "Invalidate drawable")
                         }
 
                         override fun scheduleDrawable(p0: Drawable, p1: Runnable, p2: Long) {
                             viewHolder.itemView.postDelayed(p1, p2)
-//                            Log.d("ChatAdapter", "Schedule drawable")
                         }
                     }
                 }
@@ -113,5 +121,5 @@ class ViewHolder(item: View) : RecyclerView.ViewHolder(item) {
 
 }
 
-data class Message(var name: String, var message: String, val list: List<TwitchEmote>)
+data class Message(var name: String, var message: String, val list: List<TwitchEmote>, val color: String)
 data class TwitchEmote(val id: Int, val start: Int, val end: Int)
