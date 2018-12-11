@@ -167,9 +167,9 @@ class ChatService : Service(), SharedPreferences.OnSharedPreferenceChangeListene
                     override fun onMessage(event: MessageEvent) {
                         super.onMessage(event)
                         val emotes = event.tags["emotes"] ?: ""
-                        var color = event.tags["color"] ?: "white"
+                        var color = event.tags["color"] ?: "green"
                         if (color.isEmpty()) {
-                            color = "white"
+                            color = "green"
                         }
                         event.user?.let {
                             Handler(Looper.getMainLooper())

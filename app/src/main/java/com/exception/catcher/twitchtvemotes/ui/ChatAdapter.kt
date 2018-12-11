@@ -4,11 +4,11 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.LayerDrawable
 import android.support.v7.widget.RecyclerView
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
 import android.text.style.ImageSpan
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -46,12 +46,14 @@ class ChatAdapter : RecyclerView.Adapter<ViewHolder>() {
         }
         (viewHolder.itemView as TextView).text = spannableString
         val offset = "${data.name}: ".length
+        val emoteLoadList = ArrayList<EmoteLoad>()
         data.list.forEach {
-            loadEmote(
-                "https://static-cdn.jtvnw.net/emoticons/v1/${it.id}/3.0",
-                it.start + offset,
-                it.end + offset + 1,
-                viewHolder
+            emoteLoadList.add(
+                EmoteLoad(
+                    "https://static-cdn.jtvnw.net/emoticons/v1/${it.id}/3.0",
+                    it.start + offset,
+                    it.end + offset + 1
+                )
             )
         }
         emotes.let {
@@ -60,47 +62,91 @@ class ChatAdapter : RecyclerView.Adapter<ViewHolder>() {
                 while (matcher.find()) {
                     val start = matcher.toMatchResult().start()
                     val end = matcher.toMatchResult().end()
-                    loadEmote(it.url, start, end, viewHolder)
+                    val model = EmoteLoad(it.url, start, end)
+                    if (it.isOverlay) {
+                        if (emoteLoadList.size > 0) {
+                            emoteLoadList.last().overlay = model
+                        } else {
+                            emoteLoadList.add(model)
+                        }
+                    } else {
+                        emoteLoadList.add(model)
+                    }
                 }
             }
         }
+        emoteLoadList.forEach { loadEmote(it, viewHolder) }
     }
 
+    data class EmoteLoad(val url: String, val start: Int, val end: Int, var overlay: EmoteLoad? = null)
 
-    fun loadEmote(url: String, start: Int, end: Int, viewHolder: ViewHolder) {
+    fun loadEmote(emote: EmoteLoad, viewHolder: ViewHolder) {
         Glide.with(viewHolder.itemView.context)
-            .load(url)
+            .load(emote.url)
             .into(object : SimpleTarget<Drawable>() {
-                override fun onDestroy() {
-                    super.onDestroy()
-                    Log.d("ChatAdapter", "Destroy")
-                }
-
                 override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
-                    if (resource is Animatable) {
-                        resource.start()
-                    }
-                    resource.setBounds(0, 0, resource.intrinsicWidth / 2, resource.intrinsicHeight / 2)
-                    val imageSpan = ImageSpan(resource, ImageSpan.ALIGN_BASELINE)
-                    val spannableString = SpannableString((viewHolder.itemView as TextView).text)
-                    spannableString.setSpan(imageSpan, start, end, 0)
-                    viewHolder.itemView.text = spannableString
-                    resource.callback = object : Drawable.Callback {
-                        override fun unscheduleDrawable(p0: Drawable, p1: Runnable) {
-                            viewHolder.itemView.removeCallbacks(p1)
+                    if (emote.overlay == null) {
+                        if (resource is Animatable) {
+                            resource.start()
                         }
+                        resource.setBounds(0, 0, resource.intrinsicWidth / 2, resource.intrinsicHeight / 2)
+                        val imageSpan = ImageSpan(resource, ImageSpan.ALIGN_BASELINE)
+                        val spannableString = SpannableString((viewHolder.itemView as TextView).text)
+                        spannableString.setSpan(imageSpan, emote.start, emote.end, 0)
+                        viewHolder.itemView.text = spannableString
+                        resource.callback = object : Drawable.Callback {
+                            override fun unscheduleDrawable(p0: Drawable, p1: Runnable) {
+                                viewHolder.itemView.removeCallbacks(p1)
+                            }
 
-                        override fun invalidateDrawable(p0: Drawable) {
-                            viewHolder.itemView.invalidate()
-                        }
+                            override fun invalidateDrawable(p0: Drawable) {
+                                viewHolder.itemView.invalidate()
+                            }
 
-                        override fun scheduleDrawable(p0: Drawable, p1: Runnable, p2: Long) {
-                            viewHolder.itemView.postDelayed(p1, p2)
+                            override fun scheduleDrawable(p0: Drawable, p1: Runnable, p2: Long) {
+                                viewHolder.itemView.postDelayed(p1, p2)
+                            }
                         }
+                    } else {
+                        Glide.with(viewHolder.itemView.context)
+                            .load(emote.overlay?.url)
+                            .into(object : SimpleTarget<Drawable>() {
+                                override fun onResourceReady(overlay: Drawable, transition: Transition<in Drawable>?) {
+                                    val layerDrawable = LayerDrawable(arrayOf(resource, overlay))
+                                    if (resource is Animatable) {
+                                        resource.start()
+                                    }
+                                    if (overlay is Animatable) {
+                                        overlay.start()
+                                    }
+                                    layerDrawable.setBounds(
+                                        0,
+                                        0,
+                                        Math.max(resource.intrinsicWidth / 2, overlay.intrinsicWidth / 2),
+                                        Math.max(resource.intrinsicHeight / 2, overlay.intrinsicHeight / 2)
+                                    )
+                                    val imageSpan = ImageSpan(layerDrawable, ImageSpan.ALIGN_BASELINE)
+                                    val spannableString = SpannableString((viewHolder.itemView as TextView).text)
+                                    spannableString.setSpan(imageSpan, emote.start, emote.overlay!!.end, 0)
+                                    viewHolder.itemView.text = spannableString
+                                    layerDrawable.callback = object : Drawable.Callback {
+                                        override fun unscheduleDrawable(p0: Drawable, p1: Runnable) {
+                                            viewHolder.itemView.removeCallbacks(p1)
+                                        }
+
+                                        override fun invalidateDrawable(p0: Drawable) {
+                                            viewHolder.itemView.invalidate()
+                                        }
+
+                                        override fun scheduleDrawable(p0: Drawable, p1: Runnable, p2: Long) {
+                                            viewHolder.itemView.postDelayed(p1, p2)
+                                        }
+                                    }
+                                }
+                            })
                     }
                 }
             })
-
     }
 
     fun addMessage(message: Message) {

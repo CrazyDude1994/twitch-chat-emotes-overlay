@@ -5,7 +5,6 @@
     android:layout_height="match_parent"
     tools:context=".ui.MainActivity">
 
-
     <Button
         android:id="@+id/start_button"
         android:layout_width="wrap_content"
