@@ -63,87 +63,40 @@ class ChatAdapter : RecyclerView.Adapter<ViewHolder>() {
                     val start = matcher.toMatchResult().start()
                     val end = matcher.toMatchResult().end()
                     val model = EmoteLoad(it.url, start, end)
-                    if (it.isOverlay) {
-                        if (emoteLoadList.size > 0) {
-                            emoteLoadList.last().overlay = model
-                        } else {
-                            emoteLoadList.add(model)
-                        }
-                    } else {
-                        emoteLoadList.add(model)
-                    }
+                    emoteLoadList.add(model)
                 }
             }
         }
         emoteLoadList.forEach { loadEmote(it, viewHolder) }
     }
 
-    data class EmoteLoad(val url: String, val start: Int, val end: Int, var overlay: EmoteLoad? = null)
+    data class EmoteLoad(val url: String, val start: Int, val end: Int)
 
     fun loadEmote(emote: EmoteLoad, viewHolder: ViewHolder) {
         Glide.with(viewHolder.itemView.context)
             .load(emote.url)
             .into(object : SimpleTarget<Drawable>() {
                 override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
-                    if (emote.overlay == null) {
-                        if (resource is Animatable) {
-                            resource.start()
+                    if (resource is Animatable) {
+                        resource.start()
+                    }
+                    resource.setBounds(0, 0, resource.intrinsicWidth / 2, resource.intrinsicHeight / 2)
+                    val imageSpan = ImageSpan(resource, ImageSpan.ALIGN_BASELINE)
+                    val spannableString = SpannableString((viewHolder.itemView as TextView).text)
+                    spannableString.setSpan(imageSpan, emote.start, emote.end, 0)
+                    viewHolder.itemView.text = spannableString
+                    resource.callback = object : Drawable.Callback {
+                        override fun unscheduleDrawable(p0: Drawable, p1: Runnable) {
+                            viewHolder.itemView.removeCallbacks(p1)
                         }
-                        resource.setBounds(0, 0, resource.intrinsicWidth / 2, resource.intrinsicHeight / 2)
-                        val imageSpan = ImageSpan(resource, ImageSpan.ALIGN_BASELINE)
-                        val spannableString = SpannableString((viewHolder.itemView as TextView).text)
-                        spannableString.setSpan(imageSpan, emote.start, emote.end, 0)
-                        viewHolder.itemView.text = spannableString
-                        resource.callback = object : Drawable.Callback {
-                            override fun unscheduleDrawable(p0: Drawable, p1: Runnable) {
-                                viewHolder.itemView.removeCallbacks(p1)
-                            }
 
-                            override fun invalidateDrawable(p0: Drawable) {
-                                viewHolder.itemView.invalidate()
-                            }
-
-                            override fun scheduleDrawable(p0: Drawable, p1: Runnable, p2: Long) {
-                                viewHolder.itemView.postDelayed(p1, p2)
-                            }
+                        override fun invalidateDrawable(p0: Drawable) {
+                            viewHolder.itemView.invalidate()
                         }
-                    } else {
-                        Glide.with(viewHolder.itemView.context)
-                            .load(emote.overlay?.url)
-                            .into(object : SimpleTarget<Drawable>() {
-                                override fun onResourceReady(overlay: Drawable, transition: Transition<in Drawable>?) {
-                                    val layerDrawable = LayerDrawable(arrayOf(resource, overlay))
-                                    if (resource is Animatable) {
-                                        resource.start()
-                                    }
-                                    if (overlay is Animatable) {
-                                        overlay.start()
-                                    }
-                                    layerDrawable.setBounds(
-                                        0,
-                                        0,
-                                        Math.max(resource.intrinsicWidth / 2, overlay.intrinsicWidth / 2),
-                                        Math.max(resource.intrinsicHeight / 2, overlay.intrinsicHeight / 2)
-                                    )
-                                    val imageSpan = ImageSpan(layerDrawable, ImageSpan.ALIGN_BASELINE)
-                                    val spannableString = SpannableString((viewHolder.itemView as TextView).text)
-                                    spannableString.setSpan(imageSpan, emote.start, emote.overlay!!.end, 0)
-                                    viewHolder.itemView.text = spannableString
-                                    layerDrawable.callback = object : Drawable.Callback {
-                                        override fun unscheduleDrawable(p0: Drawable, p1: Runnable) {
-                                            viewHolder.itemView.removeCallbacks(p1)
-                                        }
 
-                                        override fun invalidateDrawable(p0: Drawable) {
-                                            viewHolder.itemView.invalidate()
-                                        }
-
-                                        override fun scheduleDrawable(p0: Drawable, p1: Runnable, p2: Long) {
-                                            viewHolder.itemView.postDelayed(p1, p2)
-                                        }
-                                    }
-                                }
-                            })
+                        override fun scheduleDrawable(p0: Drawable, p1: Runnable, p2: Long) {
+                            viewHolder.itemView.postDelayed(p1, p2)
+                        }
                     }
                 }
             })

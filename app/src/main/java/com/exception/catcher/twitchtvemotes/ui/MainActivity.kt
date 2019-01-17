@@ -1,19 +1,27 @@
 package com.exception.catcher.twitchtvemotes.ui
 
+import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.support.v4.app.FragmentActivity
 import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.*
 import com.exception.catcher.twitchtvemotes.ChatService
 import com.exception.catcher.twitchtvemotes.R
+import com.crashlytics.android.Crashlytics
+import io.fabric.sdk.android.Fabric
 
-class MainActivity : AppCompatActivity() {
+
+
+class MainActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        Fabric.with(this, Crashlytics())
 
         val startButton = findViewById<Button>(R.id.start_button)
         val stopButton = findViewById<Button>(R.id.stop_button)
@@ -81,9 +89,16 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, ChatService::class.java)
             intent.putExtra("channel_name", channelEditText.text.toString())
             startService(intent)
+            try {
+                val intent1 = Intent(Intent.ACTION_VIEW, Uri.parse("twitch://stream/" + channelEditText.text))
+                startActivity(intent1)
+            } catch (e: ActivityNotFoundException) {
+                Toast.makeText(this, "Chat is started. Now start the stream", Toast.LENGTH_SHORT).show()
+            }
         }
 
 //        startButton.performClick()
+//        finish()
 
         stopButton.setOnClickListener {
             val intent = Intent(this, ChatService::class.java)

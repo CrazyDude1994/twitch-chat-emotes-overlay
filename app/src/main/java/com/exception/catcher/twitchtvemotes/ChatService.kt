@@ -78,22 +78,22 @@ class ChatService : Service(), SharedPreferences.OnSharedPreferenceChangeListene
         val newHeight = (resources.displayMetrics.heightPixels * height) / 100
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams(
-                    newWidth,
-                    newHeight,
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                    0,
-                    PixelFormat.TRANSLUCENT
+                newWidth,
+                newHeight,
+                WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                0,
+                PixelFormat.TRANSLUCENT
             )
         } else {
             WindowManager.LayoutParams(
-                    newWidth,
-                    newHeight,
-                    WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
-                    0,
-                    PixelFormat.TRANSLUCENT
+                newWidth,
+                newHeight,
+                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
+                0,
+                PixelFormat.TRANSLUCENT
             )
         }.also {
-            it.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            it.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.or(WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE)
             when (position) {
                 0 -> {
                     it.gravity = Gravity.TOP or Gravity.START
@@ -137,78 +137,82 @@ class ChatService : Service(), SharedPreferences.OnSharedPreferenceChangeListene
         recyclerView = parent.findViewById(R.id.chat_recycler)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = chatAdapter
-        windowManager.addView(parent, generateParams(preferences.getInt("position", 0),
-                preferences.getInt("height", 0), preferences.getInt("width", 0)))
+        windowManager.addView(
+            parent, generateParams(
+                preferences.getInt("position", 0),
+                preferences.getInt("height", 0), preferences.getInt("width", 0)
+            )
+        )
 
         val configuration = Configuration.Builder()
-                .addServer("irc.chat.twitch.tv", 6667)
-                .setServerPassword("oauth:3s878bc3v00yh9cf4faoro1p8ia7tv")
-                .setMessageDelay(0)
-                .setName("crazydude1994") //Set the nick of the bot. CHANGE IN YOUR CODE
-                .addAutoJoinChannel("#$channelName")
-                .addCapHandler(EnableCapHandler("twitch.tv/tags"))
-                .addListener(object : ListenerAdapter() {
+            .addServer("irc.chat.twitch.tv", 6667)
+//                .setServerPassword("oauth:3s878bc3v00yh9cf4faoro1p8ia7tv")
+            .setMessageDelay(0)
+            .setName("justinfan12345")
+            .addAutoJoinChannel("#$channelName")
+            .addCapHandler(EnableCapHandler("twitch.tv/tags"))
+            .addListener(object : ListenerAdapter() {
 
-                    override fun onConnect(event: ConnectEvent?) {
-                        super.onConnect(event)
+                override fun onConnect(event: ConnectEvent?) {
+                    super.onConnect(event)
+                    Handler(Looper.getMainLooper())
+                        .post {
+                            chatAdapter.addMessage(
+                                Message(
+                                    "Server",
+                                    "Connected",
+                                    emptyList(), "white"
+                                )
+                            )
+                            recyclerView.adapter?.itemCount?.let { recyclerView.smoothScrollToPosition(it) }
+                        }
+                }
+
+                override fun onMessage(event: MessageEvent) {
+                    super.onMessage(event)
+                    val emotes = event.tags["emotes"] ?: ""
+                    var color = event.tags["color"] ?: "green"
+                    if (color.isEmpty()) {
+                        color = "green"
+                    }
+                    event.user?.let {
                         Handler(Looper.getMainLooper())
-                                .post {
-                                    chatAdapter.addMessage(
-                                            Message(
-                                                    "Server",
-                                                    "Connected",
-                                                    emptyList(), "white"
+                            .post {
+                                val twitchEmotes = ArrayList<TwitchEmote>()
+                                val emoteList = emotes.split("/")
+                                emoteList.forEach {
+                                    val split = it.split(":")
+                                    if (split.size == 1)
+                                        return@forEach
+                                    val id = split[0]
+                                    val ranges = split[1].split(",")
+                                    ranges.forEach {
+                                        val range = it.split("-")
+                                        val start = range[0]
+                                        val end = range[1]
+                                        twitchEmotes.add(
+                                            TwitchEmote(
+                                                id.toInt(),
+                                                start.toInt(),
+                                                end.toInt()
                                             )
-                                    )
-                                    recyclerView.adapter?.itemCount?.let { recyclerView.smoothScrollToPosition(it) }
-                                }
-                    }
-
-                    override fun onMessage(event: MessageEvent) {
-                        super.onMessage(event)
-                        val emotes = event.tags["emotes"] ?: ""
-                        var color = event.tags["color"] ?: "green"
-                        if (color.isEmpty()) {
-                            color = "green"
-                        }
-                        event.user?.let {
-                            Handler(Looper.getMainLooper())
-                                    .post {
-                                        val twitchEmotes = ArrayList<TwitchEmote>()
-                                        val emoteList = emotes.split("/")
-                                        emoteList.forEach {
-                                            val split = it.split(":")
-                                            if (split.size == 1)
-                                                return@forEach
-                                            val id = split[0]
-                                            val ranges = split[1].split(",")
-                                            ranges.forEach {
-                                                val range = it.split("-")
-                                                val start = range[0]
-                                                val end = range[1]
-                                                twitchEmotes.add(
-                                                        TwitchEmote(
-                                                                id.toInt(),
-                                                                start.toInt(),
-                                                                end.toInt()
-                                                        )
-                                                )
-                                            }
-                                        }
-                                        val message = Message(
-                                                it.nick,
-                                                event.message,
-                                                twitchEmotes, color
                                         )
-                                        chatAdapter.addMessage(message)
-                                        recyclerView.adapter?.itemCount?.let { recyclerView.smoothScrollToPosition(it) }
                                     }
-                        }
+                                }
+                                val message = Message(
+                                    it.nick,
+                                    event.message,
+                                    twitchEmotes, color
+                                )
+                                chatAdapter.addMessage(message)
+                                recyclerView.adapter?.itemCount?.let { recyclerView.smoothScrollToPosition(it) }
+                            }
                     }
-                })
-                .setAutoReconnect(false)
-                .setAutoSplitMessage(false)
-                .buildConfiguration()
+                }
+            })
+            .setAutoReconnect(false)
+            .setAutoSplitMessage(false)
+            .buildConfiguration()
 
         botX = PircBotX(configuration)
 
@@ -218,12 +222,12 @@ class ChatService : Service(), SharedPreferences.OnSharedPreferenceChangeListene
         thread?.start()
 
         subscribe = EmoteApi(channelName).getGlobalEmotes()
-                .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({
-                    chatAdapter.addEmotes(it)
-                }, {
+            .observeOn(AndroidSchedulers.mainThread())
+            .subscribe({
+                chatAdapter.addEmotes(it)
+            }, {
 
-                })
+            })
         preferences.registerOnSharedPreferenceChangeListener(this)
     }
 

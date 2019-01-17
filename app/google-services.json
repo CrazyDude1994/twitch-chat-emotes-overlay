@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "666845330055",
+    "firebase_url": "https://twitch-emotes-78069.firebaseio.com",
+    "project_id": "twitch-emotes-78069",
+    "storage_bucket": "twitch-emotes-78069.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:666845330055:android:8b66436e70705277",
+        "android_client_info": {
+          "package_name": "com.exception.catcher.twitchtvemotes"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "666845330055-1fdih43vlbqblac982f7taeubp9pmtl6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzOZy1luJqcV9yaD0qqZJnjb2nynsDIus"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
