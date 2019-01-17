@@ -140,7 +140,7 @@ class ChatService : Service(), SharedPreferences.OnSharedPreferenceChangeListene
         windowManager.addView(
             parent, generateParams(
                 preferences.getInt("position", 0),
-                preferences.getInt("height", 0), preferences.getInt("width", 0)
+                preferences.getInt("height", 25), preferences.getInt("width", 25)
             )
         )
 
