@@ -125,8 +125,8 @@ class ChatService : Service(), SharedPreferences.OnSharedPreferenceChangeListene
 
     override fun onSharedPreferenceChanged(sharedPreferences: SharedPreferences?, data: String?) {
         val position = sharedPreferences?.getInt("position", 0) ?: 0
-        val width = sharedPreferences?.getInt("width", 25) ?: 0
-        val height = sharedPreferences?.getInt("height", 25) ?: 0
+        val width = sharedPreferences?.getInt("width", 25) ?: 25
+        val height = sharedPreferences?.getInt("height", 25) ?: 25
         windowManager.updateViewLayout(parent, generateParams(position, height, width))
     }
 
