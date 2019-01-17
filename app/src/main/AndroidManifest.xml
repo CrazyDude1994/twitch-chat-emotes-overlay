@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          xmlns:tools="http://schemas.android.com/tools"
           package="com.exception.catcher.twitchtvemotes">
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
 
-    <uses-feature android:name="android.software.leanback"
-                  android:required="false"/>
-    <uses-feature android:name="android.hardware.touchscreen"
-                  android:required="false"/>
+    <uses-feature
+            android:name="android.software.leanback"
+            android:required="false"/>
+    <uses-feature
+            android:name="android.hardware.touchscreen"
+            android:required="false"/>
+
+    <uses-sdk tools:overrideLibrary="android.support.v17.leanback"/>
 
     <application
             android:allowBackup="true"
@@ -16,18 +21,26 @@
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
+            android:name="android.support.multidex.MultiDexApplication"
             android:networkSecurityConfig="@xml/network_config"
             android:theme="@style/AppTheme">
 
         <activity
                 android:theme="@style/Theme.Leanback"
-                android:name=".ui.MainActivity">
+                android:name=".ui.TvActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
                 <category android:name="android.intent.category.LEANBACK_LAUNCHER"/>
             </intent-filter>
         </activity>
+        <activity
+                android:name=".ui.PhoneActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
         <service android:name=".ChatService"/>
         <meta-data
                 android:name="io.fabric.ApiKey"

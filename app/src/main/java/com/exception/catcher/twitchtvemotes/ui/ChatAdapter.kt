@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
-import android.graphics.drawable.LayerDrawable
 import android.support.v7.widget.RecyclerView
 import android.text.SpannableString
 import android.text.style.ForegroundColorSpan
@@ -14,6 +13,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.Request
 import com.bumptech.glide.request.target.SimpleTarget
 import com.bumptech.glide.request.transition.Transition
 import com.exception.catcher.twitchtvemotes.R
@@ -70,10 +70,17 @@ class ChatAdapter : RecyclerView.Adapter<ViewHolder>() {
         emoteLoadList.forEach { loadEmote(it, viewHolder) }
     }
 
+    override fun onViewDetachedFromWindow(holder: ViewHolder) {
+        super.onViewDetachedFromWindow(holder)
+        if (holder.request?.isRunning == true) {
+            holder.request?.clear()
+        }
+    }
+
     data class EmoteLoad(val url: String, val start: Int, val end: Int)
 
     fun loadEmote(emote: EmoteLoad, viewHolder: ViewHolder) {
-        Glide.with(viewHolder.itemView.context)
+        val request = Glide.with(viewHolder.itemView.context)
             .load(emote.url)
             .into(object : SimpleTarget<Drawable>() {
                 override fun onResourceReady(resource: Drawable, transition: Transition<in Drawable>?) {
@@ -99,7 +106,8 @@ class ChatAdapter : RecyclerView.Adapter<ViewHolder>() {
                         }
                     }
                 }
-            })
+            }).request
+        viewHolder.request = request
     }
 
     fun addMessage(message: Message) {
@@ -117,7 +125,7 @@ class ChatAdapter : RecyclerView.Adapter<ViewHolder>() {
 }
 
 class ViewHolder(item: View) : RecyclerView.ViewHolder(item) {
-
+    var request: Request? = null
 }
 
 data class Message(var name: String, var message: String, val list: List<TwitchEmote>, val color: String)

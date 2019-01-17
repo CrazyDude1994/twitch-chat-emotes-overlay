@@ -1,39 +1,34 @@
 package com.exception.catcher.twitchtvemotes.ui
 
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Bundle
-import android.support.v4.app.FragmentActivity
-import android.support.v7.app.AppCompatActivity
 import android.view.View
 import android.widget.*
+import com.crashlytics.android.Crashlytics
 import com.exception.catcher.twitchtvemotes.ChatService
 import com.exception.catcher.twitchtvemotes.R
-import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
 
+class MainPresenter() {
 
+    fun onCreate(activity: Activity) {
+        activity.setContentView(R.layout.activity_main)
+        Fabric.with(activity, Crashlytics())
 
-class MainActivity : FragmentActivity() {
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        Fabric.with(this, Crashlytics())
-
-        val startButton = findViewById<Button>(R.id.start_button)
-        val stopButton = findViewById<Button>(R.id.stop_button)
-        val channelEditText = findViewById<EditText>(R.id.channel_name)
-        val spinner = findViewById<Spinner>(R.id.position_spinner)
-        val height = findViewById<SeekBar>(R.id.height)
-        val width = findViewById<SeekBar>(R.id.width)
+        val startButton = activity.findViewById<Button>(R.id.start_button)
+        val stopButton = activity.findViewById<Button>(R.id.stop_button)
+        val channelEditText = activity.findViewById<EditText>(R.id.channel_name)
+        val spinner = activity.findViewById<Spinner>(R.id.position_spinner)
+        val height = activity.findViewById<SeekBar>(R.id.height)
+        val width = activity.findViewById<SeekBar>(R.id.width)
 
         height.max = 100
         width.max = 100
 
-        val preferences = getSharedPreferences("settings", Context.MODE_PRIVATE)
+        val preferences = activity.getSharedPreferences("settings", Context.MODE_PRIVATE)
 
         val position = preferences.getInt("position", 0)
         val currentHeight = preferences.getInt("height", 25)
@@ -67,9 +62,9 @@ class MainActivity : FragmentActivity() {
         })
 
         ArrayAdapter.createFromResource(
-                this,
-                R.array.chat_alignment,
-                android.R.layout.simple_spinner_item
+            activity,
+            R.array.chat_alignment,
+            android.R.layout.simple_spinner_item
         ).also { adapter ->
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             spinner.adapter = adapter
@@ -86,23 +81,20 @@ class MainActivity : FragmentActivity() {
         }
 
         startButton.setOnClickListener {
-            val intent = Intent(this, ChatService::class.java)
+            val intent = Intent(activity, ChatService::class.java)
             intent.putExtra("channel_name", channelEditText.text.toString())
-            startService(intent)
+            activity.startService(intent)
             try {
                 val intent1 = Intent(Intent.ACTION_VIEW, Uri.parse("twitch://stream/" + channelEditText.text))
-                startActivity(intent1)
+                activity.startActivity(intent1)
             } catch (e: ActivityNotFoundException) {
-                Toast.makeText(this, "Chat is started. Now start the stream", Toast.LENGTH_SHORT).show()
+                Toast.makeText(activity, "Chat is started. Now start the stream", Toast.LENGTH_SHORT).show()
             }
         }
 
-//        startButton.performClick()
-//        finish()
-
         stopButton.setOnClickListener {
-            val intent = Intent(this, ChatService::class.java)
-            stopService(intent)
+            val intent = Intent(activity, ChatService::class.java)
+            activity.stopService(intent)
         }
     }
 }
